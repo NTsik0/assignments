@@ -2,7 +2,7 @@
 
 ## Java-Development-Tools-And-Best-Practices
 
-This repository contains all assignments for the Algorithms & Java Benchmarking module.
+This repository contains all assignments for the course of Java Development Tools & Best Practices.
 
 ---
 
