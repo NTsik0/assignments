@@ -1,0 +1,196 @@
+
+Nikoloz Tsikaridze, Java Development Tools & Best Practices
+
+
+
+1)BoxPuzzle.java
+
+Pattern: Composite, Category: Structural
+
+Classes and their roles are next ones:
+Unit - Component interface
+Item - Leaf
+Crate - composite
+
+Justification : 
+
+1)Uniform Interface: both item and crate implement Unit, so the clients call size() on either without knowing which concrete type they hold.
+
+1)Recursive Composition: Crate holds a list<unit>, meaning, it can contain both item objects and other crate objects. A node can hold children of the same abstract type as itself.
+
+2)Delegating size(): Crate.size() loops over its children and calls unit.size() on each, delegating calculation down the tree. Item.size() is the base case that stops the recursion there.
+
+
+
+
+2)DailyChoice.java 
+Pattern: Strategy, Category : Behavioral
+
+	Classes and their roles are next ones:
+FeeRule - Strategy interface
+RegularRule, WeekendRule, MemberRule - Concrete Strategies
+CheckoutDesk - Context
+
+Justification:
+1. Family of interchangeable algorithms: RegularRule, WeekendRule, and MemberRule all implement FeeRule, every one of these encapsulating a different calculation for the same apply() method.
+2. Context delegates to the strategy: CheckoutDesk holds a FeeRule reference and calls rule.apply(amount) inside total
+3. Runtime swappability: changeRule(FeeRule) is being swapped on a live CheckoutDesk without changing any other code.
+
+
+
+
+
+3)GateMood.java
+
+Pattern: State, Category: Behavioral
+
+Classes and their roles are next ones:
+
+    Mode - State interface
+
+    OpenMode, ClosedMode - Concrete States
+
+    Door - Context
+
+Justification:
+
+    State drives behavior: OpenMode.act() and ClosedMode.act() produce different output for the same door.push() call — the behavior of Door changes entirely depending on which Mode is active.
+
+    Self-driven transitions: The state objects themselves call door.setMode() to switch to the next state. The context does not decide the next state; the current state does.
+
+    Context is passive: Door.push() simply delegates to mode.act(this), passing itself so the state can trigger a transition. All branching is encoded in the state objects.
+
+
+
+
+4.	KitchenPlan.java
+Pattern: Template Method, Category: Behavioral
+Classes and their roles are next ones:
+     	Meal - Abstract Class (Template)
+     	prepare() - Template Method
+     	wash(), serve() - Concrete steps with defaults
+     	cook() - Primitive / abstract step
+     	SoupMeal, GrillMeal - Concrete Classes
+Justification:
+1.	Fixed algorithm skeleton: prepare() is declared final — the order wash() then cook() then serve() cannot be changed by any subclass.
+2.	Selective override: cook() is abstract, forcing each subclass to fill in that one step. wash() and serve() have defaults that subclasses may override but do not have to.
+3.	Inversion of control: SoupMeal and GrillMeal never call prepare() themselves — they only supply cook(). The parent template drives execution.
+5.	MorningCoffee.java
+Pattern: Decorator, Category: Structural
+Classes and their roles are next ones:
+     	Cup - Component interface
+     	PlainCup - Concrete Component
+     	ExtraCup - Abstract Decorator
+     	MilkLayer, SugarLayer - Concrete Decorators
+Justification:
+1.	Wrapping the same interface: ExtraCup both implements Cup and holds a reference to another Cup — this double relationship is the structural signature of Decorator.
+2.	Layered delegation with augmentation: MilkLayer.price() calls inner.price() and adds to it rather than replacing it.
+3.	Runtime composition without subclassing: Behaviors are stacked by nesting constructors — new combinations require no new classes, just different wrapping orders.
+
+
+
+
+
+
+6.	NightShift.java
+Pattern: Factory Method, Category: Creational
+Classes and their roles are next ones:
+     	Supervisor - Abstract Creator
+     	BakerySupervisor, DeliverySupervisor - Concrete Creators
+     	Worker -- Product interface
+     	Baker, Driver - Concrete Products
+Justification:
+1.	Algorithm in parent, creation in subclass: Supervisor.schedule() defines the full workflow — hire() then work() — but never decides which Worker to create.
+2.	Deferred instantiation: BakerySupervisor returns a Baker; DeliverySupervisor returns a Driver. Each subclass overrides the factory method to instantiate its specific product.
+3.	Parent calls the hook: schedule() calls hire() — the parent drives the algorithm while subclasses supply the object.
+
+
+
+
+7.	OldSpeakerPort.java
+Pattern: Adapter, Category: Structural
+Classes and their roles are next ones:
+     	SoundSource - Target interface
+     	LegacyPlayer - Adaptee
+     	Wire - Adapter
+     	ConferenceRoom - Client
+Justification:
+1.	Incompatible interface: LegacyPlayer exposes startSong() but ConferenceRoom expects SoundSource with playTrack() — they cannot communicate without translation.
+2.	Bridging via wrapping: Wire implements SoundSource and internally holds a LegacyPlayer, translating playTrack() calls into startSong() calls.
+3.	Client isolation: ConferenceRoom only knows SoundSource — it has no reference to LegacyPlayer and no knowledge of the translation happening inside Wire.
+
+
+
+
+8.	OnlyOneMic.java
+Pattern: Singleton, Category: Creational
+Classes and their roles are next ones:
+     	Mixer - Singleton
+     	Mixer.get() - Global access point
+Justification:
+1.	Private constructor: new Mixer() cannot be called from outside the class, preventing external instantiation.
+2.	Single static instance: private static final Mixer INSTANCE = new Mixer() is created eagerly at class load time — exactly one instance ever exists.
+3.	Verified identity: main() confirms a == b, proving both variables hold the same object reference.
+
+
+
+
+
+9.	PrivateShelf.java
+Pattern: Proxy, Category: Structural
+Classes and their roles are next ones:
+     	Archive - Subject interface
+     	RealArchive - Real Subject
+     	CheckedArchive - Proxy
+Justification:
+1.	Same interface, controlled access: CheckedArchive implements Archive and wraps a RealArchive. The client always uses Archive — it never talks to RealArchive directly.
+2.	Access control before forwarding: CheckedArchive checks the allowed flag before calling inner.fetch(). If access is denied, the real subject is never reached.
+3.	Transparent substitution: From the client's perspective, both objects look identical (same Archive type). The proxy intercepts calls invisibly.
+
+
+
+
+
+10.	RemoteClick.java
+Pattern: Command, Category: Behavioral
+Classes and their roles are next ones:
+     	Step - Command interface
+     	StartStep, StopStep - Concrete Commands
+     	Lamp - Receiver
+     	Button - Invoker
+Justification:
+1.	Encapsulated request: StartStep and StopStep each wrap a specific action on Lamp as an object.
+2.	Invoker knows nothing about the receiver: Button calls step.run() but has no reference to Lamp.
+3.	Runtime assignment: button.setStep() allows different commands to be loaded before pressing.
+
+
+
+
+
+11.	TripStarter.java
+Pattern: Facade, Category: Structural
+Classes and their roles are next ones:
+     	TripButton - Facade
+     	TicketDesk, HotelDesk, TaxiDesk - Subsystem classes
+Justification:
+1.	Simplified interface: TripButton.go() hides three separate subsystem calls behind a single method.
+2.	No interface, no delegation chain: TripButton does not implement a shared interface with the subsystem classes — it simply owns and orchestrates them.
+3.	Subsystem encapsulation: The client never directly calls reserve() on any desk. All knowledge of the subsystem is contained inside TripButton.
+
+
+
+
+
+12.	WatchTower.java
+Pattern: Observer, Category: Behavioral
+Classes and their roles are next ones:
+     	Screen - Observer interface
+     	WindowA, WindowB - Concrete Observers
+     	WeatherCenter - Subject
+Justification:
+1.	One-to-many relationship: WeatherCenter maintains a List<Screen> and notifies all registered observers whenever its state changes via setLevel().
+2.	Push notification on state change: When setLevel() is called, WeatherCenter immediately iterates the list and calls screen.refresh(this.level) on every observer.
+3.	Loose coupling: Observers register via attach() but hold no reference back to WeatherCenter. The subject knows only the Screen interface.
+
+
+ 		
