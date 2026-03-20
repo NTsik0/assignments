@@ -10,7 +10,7 @@ This repository contains all assignments and projects for the course of Java Dev
 
 | # | Folder | Description |
 |---|--------|-------------|
-| 1 | [assignment-1/](./assignment-1/) | Sorting 1,000,000 Integers — JMH benchmark comparing Bubble Sort, Quick Sort, LSD Radix Sort, and Arrays.sort() |
+| 1 | [Assignment-1/](./assignment-1/) | Sorting 1,000,000 Integers — JMH benchmark comparing Bubble Sort, Quick Sort, LSD Radix Sort, and Arrays.sort() |
 
 ---
 
