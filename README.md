@@ -17,7 +17,7 @@ This repository contains all assignments and projects for the course of Java Dev
 ## 🧪 Lab Exercises
 
 Lab Exercises are avaliable here:
-👉 [Lab Exercises](./LabExercise01/)
+👉 [Lab Exercises](./assignments/Lab%20Exercises
 
 ---
 
