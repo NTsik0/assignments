@@ -1,0 +1,379 @@
+# Assignment 2 : Refactoring Notes  - Nikoloz Tsikaridze
+
+Each section names the file, states the original smell, lists the refactorings applied, and explains why the result is better.
+
+-----
+
+N:1. Alternative Classes with Different Interfaces
+File: AlternativeClassesWithDifferentInterfacesExample.java
+
+Original smell:
+ZoomClassroom.beginSession() and TeamsClassroom.openMeeting() served the same purpose but exposed different method names. Client code had to know both APIs and branch between them. Substitution was impossible without adaptation.
+
+Refactorings applied:
+ Extract Interface (VirtualClassroom) with a single agreed:upon method start().
+ Change Method Signature : both implementations renamed their method to start().
+ Use Supertype Where Possible : client code now declares VirtualClassroom references.
+
+Why it is better:
+The client is decoupled from concrete providers. Adding a third platform like GoogleMeetClassroom requires only a new VirtualClassroom implementation with no changes to existing client code.
+
+-----
+
+N:2. Comments
+File: CommentsExample.java
+
+Original smell:
+Three block comments were compensating for a method that mixed three distinct concerns (VIP discount, bulk discount, tax) without naming them. Removing the comments would have left the reader guessing.
+
+Refactorings applied:
+ Extract Method : applyVipDiscount(), applyBulkDiscount(), applyTax().
+ Rename : the top-level method renamed to priceWithDiscountsAndTax().
+
+Why it is better:
+The extracted method names replace the comments entirely. The body of the top-level method is now a four-line narrative that any reader can follow without annotations.
+
+-----
+
+N:3. Data Class
+File: DataClassExample.java
+
+Original smell:
+StudentRecord was a passive bag of public fields. Three separate helper classes (HonorsEvaluator, TuitionDiscountCalculator, AcademicStandingReporter) held all the logic, leaving the domain model anemic and poorly cohesive.
+
+Refactorings applied:
+ Encapsulate Fields : fields made private with a constructor.
+ Move Method : isEligibleForHonors(), tuitionDiscountPercent(), and academicStanding() moved into StudentRecord.
+ The three helper classes removed; their only job was operating on the record's own data.
+
+Why it is better:
+StudentRecord now owns behavior that depends on its own state. The client asks the student object directly. No external class can corrupt the fields. The model is active, not passive.
+
+-----
+
+N:4. Data Clumps
+File: DataClumpsExample.java
+
+Original smell:
+The trio (name, email, phone) appeared as separate parameters across four method signatures and twelve variables at the call site. The clump had no name and no home.
+
+Refactorings applied:
+ Introduce Parameter Object : ContactInfo encapsulates the three values.
+ Move Method : label(), emailGreeting(), smsMessage(), isReachable() moved into ContactInfo.
+ Change Method Signature : methods now accept ContactInfo instead of three primitives.
+
+Why it is better:
+Each piece of contact logic lives in one place. Adding a fax number is a single:field change in ContactInfo, not a signature change across four methods and every call site. Client code shrank dramatically.
+
+-----
+
+N:5. Divergent Change
+File: DivergentChangeExample.java
+
+Original smell:
+One class held report formatting, SQL generation, and CSV export : three completely unrelated reasons to change. A DB schema rename, a new report template, and a spreadsheet tool change would all hit the same class.
+
+Refactorings applied:
+ Extract Class : ExamReportFormatter, ExamSqlBuilder, ExamCsvExporter.
+ Move Method and field : each concern takes its own private fields and methods.
+
+Why it is better:
+Each class has exactly one reason to change. A DB migration touches only ExamSqlBuilder. A branding change touches only ExamReportFormatter. The classes are individually testable and reusable.
+
+-----
+
+N:6. Duplicated Code
+File: DuplicatedCodeExample.java
+
+Original smell:
+summerInvoice() and winterInvoice() shared identical tax and shipping calculations. The discount formula was the only difference. A tax rate change required two edits and risked the copies drifting out of sync.
+
+Refactorings applied:
+ Extract Method : calculateTax(), calculateShipping(), applyCharges() capture the shared steps.
+ The two public methods now supply only their genuinely different discount logic.
+
+Why it is better:
+Tax and shipping logic exist in exactly one method each. Season:specific discount rules are easy to compare side by side. A tax change touches one line.
+
+-----
+
+N:7. Feature Envy
+File: FeatureEnvyExample.java
+
+Original smell:
+ScholarshipCalculator.qualifies() had no data of its own and was entirely interested in StudentAccount's state. The behaviour was living in the wrong class.
+
+Refactorings applied:
+ Move Method : qualifiesForScholarship() moved into StudentAccount.
+ ScholarshipCalculator removed; it added no independent value.
+
+Why it is better:
+Logic sits next to the data it depends on. The client asks the account directly. Scholarship threshold changes touch only StudentAccount.
+
+-----
+
+N:8. Global Data
+File: GlobalDataExample.java
+
+Original smell:
+currentSemester and tuitionRate were public static fields reachable and mutable from anywhere. Any class could change them silently, making bugs nearly impossible to trace.
+
+Refactorings applied:
+ Extract Class : AcademicRegistry encapsulates the shared state.
+ Encapsulate Fields : fields made private; mutations go through openFallSemester(), approveRateIncrease(), applyEmergencyIncrease().
+ Move Method : state:changing behaviour moved into AcademicRegistry.
+ Dependency Injection : BillingService and SemesterAdministration receive the registry via constructor instead of accessing statics.
+
+Why it is better:
+All mutations to semester and rate data pass through one class. The coupling point is explicit. Testing is straightforward because the registry can be replaced with a test double.
+
+-----
+
+N:9. Insider Trading
+File: InsiderTradingExample.java
+
+Original smell:
+AuditService read BankAccount.balance and wrote BankAccount.secretFlag directly. The two classes were tightly coupled through raw field access.
+
+Refactorings applied:
+ Encapsulate Fields : balance and status made private.
+ Move Method : freezeIfNegativeBalance() moved into BankAccount, where the decision data lives.
+ AuditService simplified to call one intention:revealing method on the account.
+
+Why it is better:
+BankAccount owns and protects its own state. AuditService no longer needs to know the field names. Adding new freeze conditions requires changing only BankAccount.
+
+-----
+
+N:10. Large Class
+File: LargeClassExample.java
+
+Original smell:
+One class held enrollment, staffing, finance, cafeteria, transport, help desk, payroll, and website concerns : eight unrelated domain areas crammed into a single abstraction.
+
+Refactorings applied:
+ Extract Class for each cohesive domain area:
+   AcademicRegistry (students, teachers, courses)
+   FinanceOffice (budget, tuition, salaries)
+   CampusServices (cafeteria, bus schedule, help desk)
+   HrOffice (payroll day)
+    WebsiteAdmin (website theme)
+ Move Method and field : each field and method follows its domain.
+ The original class becomes a thin coordinator.
+
+Why it is better:
+Each extracted class has a single reason to change. Classes are individually small, readable, and testable. Adding a new transport feature touches only CampusServices.
+
+-----
+
+N:11. Lazy Element
+File: LazyElementExample.java
+
+Original smell:
+StudentNameFormatter existed only to call String.trim(). It added no variation, no policy, and no reusable abstraction : pure structural noise.
+
+Refactorings applied:
+ Inline Class : the formatter is removed; the call site calls trim() directly.
+
+Why it is better:
+One fewer class to navigate. Intent is immediately clear. The abstraction is removed because it earned nothing.
+
+-----
+
+N:12. Long Function
+File: LongFunctionExample.java
+
+Original smell:
+processOrder() mixed five distinct concerns in one 40-line block: discount, shipping, tax, approval status, and summary formatting. Understanding any one step required holding all five in mind simultaneously.
+
+Refactorings applied:
+ Extract Method for each concern: calculateDiscount(), calculateShipping(), calculateTax(), deriveApprovalStatus(), buildSummary().
+ processOrder() becomes a five-line orchestrator.
+
+Why it is better:
+Each extracted method can be read, tested, and changed independently. The top-level method communicates the overall algorithm structure at a glance without noise from implementation details.
+
+-----
+
+N:13. Long Parameter List
+File: LongParameterListExample.java
+
+Original smell:
+registerStudent() accepted 12 parameters. Call sites were unreadable, argument order was easy to mix up, and related values (address, guardian, enrollment) had no grouping.
+
+Refactorings applied:
+ Introduce Parameter Object : Address, GuardianContact, EnrollmentInfo.
+ Change Method Signature : registerStudent() now takes four objects plus two personal scalars.
+
+Why it is better:
+Each parameter object gives its group a name and a future home for validation. Call sites are self:describing. Adding a field to Address changes only Address and its constructors, not the registration method signature.
+
+-----
+
+N:14. Loops
+File: LoopsExample.java
+
+Original smell:
+A for:loop hid a simple two:step transformation (filter by GPA, collect names) behind manual control:flow. Readers had to trace loop variables and an accumulator to understand the intent.
+
+Refactorings applied:
+ Replace Loop with Pipeline : stream().filter().map().collect().
+ Extract Method : isHonorStudent() names the predicate.
+
+Why it is better:
+The pipeline reads as a declarative specification. Control:flow mechanics are gone. The predicate is reusable and independently testable.
+
+-----
+
+N:15. Message Chains
+File: MessageChainsExample.java
+
+Original smell:
+The client navigated four objects deep to get a phone number, coupling itself to the entire internal object graph.
+
+Refactorings applied:
+ Hide Delegate : University.getCoordinatorPhoneNumber() encapsulates the traversal.
+ Intermediate getters made package:private to remove them from the public API.
+
+Why it is better:
+The client asks one object for one piece of information. The internal graph can be restructured without touching call sites.
+
+-----
+
+N:16. Middle Man
+File: MiddleManExample.java
+
+Original smell:
+StudentPortal.findGrade() did nothing except forward the call to TranscriptService.findGrade(). The extra class added indirection without adding any value.
+
+Refactorings applied:
+ Remove Middle Man (Inline Class) : StudentPortal removed; client talks directly to TranscriptService.
+
+Why it is better:
+One fewer class and one fewer indirection. The call is honest about where the behaviour lives. If StudentPortal later needs to add access control or caching, it can be reintroduced with a real justification.
+
+-----
+
+N:17. Mutable Data
+File: MutableDataExample.java
+
+Original smell:
+getEnrolledStudents() returned the live internal list. Any caller could clear(), remove(), or add() entries, silently corrupting the object's state : as clientCode() demonstrated.
+
+Refactorings applied:
+ Encapsulate Field : list is private and final.
+ Return Unmodifiable View : getEnrolledStudents() wraps the list with Collections.unmodifiableList().
+ Encapsulate Updates : enroll() is the only mutation path.
+
+Why it is better:
+External code cannot corrupt the enrollment list. All mutations go through enroll(), the natural place for future validation or events. An attempted clear() now throws UnsupportedOperationException, making the contract explicit.
+
+-----
+
+N:18. Mysterious Name
+File: MysteriousNameExample.java
+
+Original smell:
+f(a, b, c) with locals x and y communicated nothing. Understanding the calculation required arithmetic reverse:engineering.
+
+Refactorings applied:
+ Rename Method : f → calculateEachPartyShare.
+ Rename Parameters : a → unitsSold, b → pricePerUnit, c → totalCosts.
+ Rename Local Variables : x → grossRevenue, y → netRevenue.
+
+Why it is better:
+Every symbol announces its meaning. The formula can be verified by reading it. No reverse:engineering required.
+
+-----
+
+N:19. Primitive Obsession
+File: PrimitiveObsessionExample.java
+
+Original smell:
+Age, status, balance, and country code were raw primitives. Magic strings "ACTIVE" and "GE" were inline; thresholds like 18 and 100 had no named home and scattered across conditions.
+
+Refactorings applied:
+ Replace Primitive with Enum : StudentStatus and CountryCode make invalid values impossible.
+ Extract Class : StudentAge owns isAdult(), UnpaidBalance owns isCleared() and the MAXIMUM_ALLOWED constant.
+ Move Method : each rule lives in its domain type.
+
+Why it is better:
+Magic strings are gone. Each rule has exactly one home. The compiler rejects invalid statuses or country codes. Changing the minimum age or debt threshold touches exactly one class.
+
+-----
+
+N:20. Refused Bequest
+File: RefusedBequestExample.java
+
+Original smell:
+Penguin extended Bird and threw UnsupportedOperationException from fly(). Any code holding a Bird reference and calling fly() could blow up at runtime : a direct LSP violation. The hierarchy was a lie.
+
+Refactorings applied:
+ Extract Superclass : Bird becomes an abstract base with move() (a locomotion contract all birds honour).
+ Push Down : fly() pushed down into a new FlyingBird intermediate class.
+ Penguin now extends Bird directly and implements move() as waddling.
+ Use Supertype Where Possible : client uses Bird for general locomotion, FlyingBird only when flight is specifically expected.
+
+Why it is better:
+No bird throws at runtime. Penguin is a legitimate Bird. FlyingBird genuinely supports flying. The hierarchy matches the real:world relationship and LSP is satisfied.
+
+-----
+
+N:21. Repeated Switches
+File: RepeatedSwitchesExample.java
+
+Original smell:
+Two switch statements both branched on studentType. Adding a new type required coordinated edits in two separate methods, with a risk of forgetting one.
+
+Refactorings applied:
+ Replace Conditional with Polymorphism : StudentType becomes an enum that carries both tuitionDiscount and dormPriority as data for each variant.
+ The two switch methods are replaced by direct data lookups on the enum constant.
+
+Why it is better:
+Adding a new student type is one enum constant addition; all consuming methods handle it automatically. The duplication is eliminated. New variants extend the enum without modifying any existing switch arms (Open/Closed Principle).
+
+-----
+
+N:22. Shotgun Surgery
+File: ShotgunSurgeryExample.java
+
+Original smell:
+Course title presentation logic was duplicated across Course.label(), Invoice.description(), and Certificate.text(). A wording change required three separate edits; missing one would create inconsistency.
+
+Refactorings applied:
+ Extract Class : CourseTitleFormatter centralises all course:title formatting rules.
+ Move Method : each formatting method moves into the formatter.
+  Course, Invoice, Certificate delegate to the formatter and hold no presentation logic of their own.
+
+Why it is better:
+There is now a single place for course:title formatting. Any wording change is made once and propagates everywhere. The three domain classes remain focused on their own responsibilities.
+
+-----
+
+N:23. Speculative Generality
+File: SpeculativeGeneralityExample.java
+
+Original smell:
+NotificationChannel.send() declared futureTemplate, encrypted, and urgent parameters that EmailChannel ignored entirely. The interface was prepared for imaginary variation that had not arrived.
+
+Refactorings applied:
+ Change Method Signature : the three unused parameters removed from the interface and the implementation.
+
+Why it is better:
+Every call site passes only the data that is actually consumed. Readers no longer wonder what futureTemplate or encrypted mean. If encryption is genuinely needed, it can be added then with a real implementation behind it (YAGNI respected).
+
+-----
+
+N:24. Temporary Field
+File: TemporaryFieldExample.java
+
+Original smell:
+examRoom and onlineMeetingLink were both fields on one class, but only one was ever meaningful at a time. Depending on which method was called, part of the object's state was always null.
+
+Refactorings applied:
+ Extract Class : OnsiteExam owns only room; OnlineExam owns only meetingLink.
+ Move Method : preparation logic moves into the appropriate class.
+ The original class becomes a thin coordinator.
+
+Why it is better:
+Each class is always in a fully consistent state. OnsiteExam always has a room; OnlineExam always has a link. There is no null field, no mode:checking conditional, and no confused state. New exam modes can be added as new classes without touching existing ones.
